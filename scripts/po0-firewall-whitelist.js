@@ -41,6 +41,7 @@ var HIST_WINDOW_MS = 24 * 3600 * 1000; // 📶 标记的记账窗口
 /* ---------- 环境兼容层 ---------- */
 
 var isQX = typeof $task !== "undefined";
+var isLoon = typeof $loon !== "undefined";
 var isSurgeLike = typeof $httpClient !== "undefined"; // Surge/Stash/Shadowrocket/Loon
 
 function storeRead(key) {
@@ -73,6 +74,12 @@ function httpRequest(method, opts) {
         }
       );
     } else if (isSurgeLike) {
+      if (isLoon) {
+        // Shared callers use seconds; Loon's $httpClient expects milliseconds.
+        if (typeof opts.timeout === "number") opts.timeout *= 1000;
+        // Whitelist the current network, even when the proxy is not yet reachable.
+        opts.node = "DIRECT";
+      }
       var fn = method === "POST" ? $httpClient.post : $httpClient.get;
       fn(opts, function (error, response, body) {
         if (error) resolve({ error: String(error) });
